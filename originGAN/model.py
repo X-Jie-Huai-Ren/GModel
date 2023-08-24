@@ -43,7 +43,10 @@ class Discriminator(nn.Module):
             nn.Linear(128, 1),
             nn.Sigmoid()
         )
+        self.flatten = nn.Flatten()
     
     def forward(self, x):
+        if len(x.shape) > 2:
+            x = self.flatten(x)
         return self.discriminator(x)
     
