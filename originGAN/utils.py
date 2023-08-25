@@ -2,7 +2,7 @@
 import os
 from typing import Any
 from tqdm import tqdm
-from torch import nn
+import torch 
 
 # 将从torchvision中下载的数据集(非图片格式)转为图片格式
 def transform_to_image(data, save_path: str):
@@ -10,11 +10,11 @@ def transform_to_image(data, save_path: str):
         data: 非图片数据
         save_path: 本地保存的路径
     """
-    if not os.path.exists(save_path):
-        os.makedirs(save_path)
     # 如果已经存在,不需要再转
     if os.path.exists(save_path):
         return
+    if not os.path.exists(save_path):
+        os.makedirs(save_path)
     
     # transform
     for i in tqdm(range(len(data))):
@@ -37,4 +37,9 @@ class Compose(object):
         for t in self.transforms:
             imgs = t(imgs)
         return imgs
+    
+# Save the checkpoints
+def save_checkpoints(checkpoints, filename):
+    print('==> Saving checkpoints')
+    torch.save(checkpoints, filename)
     
