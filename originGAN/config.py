@@ -18,3 +18,5 @@ IMAGE_DIR = '../dataset/mnist/train'
 NUM_WORKERS = 0
 PIN_MEMORY = True
 DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'
+Z_FIXED= torch.randn(size=(BATCH_SIZE, Z_DIM)).to(DEVICE)
+

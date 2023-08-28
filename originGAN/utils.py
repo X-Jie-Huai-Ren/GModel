@@ -42,6 +42,12 @@ class Compose(object):
     
 # Save the checkpoints
 def save_checkpoints(checkpoints, log_dir, epoch):
+    """
+    Params:
+        checkpoints: 模型权重
+        log_dir: 日志目录
+        epoch: 当前训练的轮数
+    """
     # 若文件夹不存在，则创建
     if not os.path.exists(log_dir):
         os.makedirs(log_dir)

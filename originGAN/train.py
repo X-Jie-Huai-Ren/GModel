@@ -5,6 +5,7 @@ from torch.utils.data import DataLoader
 from torch import optim
 from torch.utils.tensorboard import SummaryWriter
 from torchvision.transforms import transforms
+from torchvision.utils import make_grid
 from tqdm import tqdm
 from dataset import MNISTDataset
 import config
@@ -12,7 +13,7 @@ from utils import Compose, save_checkpoints, build_log_folder
 from model import Generator, Discriminator
 
 # 单周期训练
-def train(train_loader, generator, discriminator, gen_opt, dis_opt, criterion):
+def train(train_loader, generator, discriminator, gen_opt, dis_opt, criterion, epoch, writer):
     """
     Params:
         ...
@@ -20,8 +21,11 @@ def train(train_loader, generator, discriminator, gen_opt, dis_opt, criterion):
 
     """
     loop = tqdm(train_loader, leave=False)  # 设置参数leave=False, 结果只显示在一行
+    loop.set_description(f'Epoch:{epoch}')
     dis_loss_epoch = []
     gen_loss_epoch = []
+    fake_score_epoch = []
+    real_score_epoch = []
     for real in loop:
         # 将真实图像的数据拷贝到device上
         real = real.view(-1, 784).to(config.DEVICE)
@@ -36,11 +40,14 @@ def train(train_loader, generator, discriminator, gen_opt, dis_opt, criterion):
         real_loss = criterion(discri_real, torch.ones_like(discri_real))
         discri_fake = discriminator(fake)
         fake_loss = criterion(discri_fake, torch.zeros_like(discri_fake))
-        dis_loss = (real_loss + fake_loss)   # 不用加负号, 因为BCELoss中自带一个负号，最大化转最小化
+        dis_loss = (real_loss + fake_loss) / 2  # 不用加负号, 因为BCELoss中自带一个负号，最大化转最小化
         dis_opt.zero_grad()
         dis_loss.backward(retain_graph=True)  # 如果对某一变量有第二次backeard, 需要保持计算图
         dis_opt.step()
+        # 记录日志
         dis_loss_epoch.append(round(float(dis_loss.detach().cpu().numpy()), 3))
+        real_score_epoch.append(float(torch.mean(discri_real, dim=0)))
+        fake_score_epoch.append(float(torch.mean(discri_fake, dim=0)))
 
         # Train the Genarator: minimize log(D(real)) + log(1-D(G(z)))
         discri_real1 = discriminator(real)
@@ -51,11 +58,23 @@ def train(train_loader, generator, discriminator, gen_opt, dis_opt, criterion):
         gen_opt.zero_grad()
         gen_loss.backward()
         gen_opt.step()
+        # 记录日志
         gen_loss_epoch.append(round(float(gen_loss.detach().cpu().numpy()), 3))
-        break
 
-    return sum(dis_loss_epoch) / len(dis_loss_epoch), sum(gen_loss_epoch) / len(gen_loss_epoch)
+    # 将生成的图片展示出来
+    fake_fixed = generator(config.Z_FIXED).reshape((-1, 1, 28, 28))
+    real = real.reshape((-1, 1, 28, 28))
+    img_grid_fake = make_grid(fake_fixed, normalize=True)
+    img_grid_real = make_grid(real, normalize=True)
+    writer.add_image(
+        "Mnist Fake Image", img_grid_fake, global_step = epoch
+    )
+    writer.add_image(
+        "Mnist Real Image", img_grid_real, global_step = epoch
+    )
 
+    return (sum(dis_loss_epoch) / len(dis_loss_epoch), sum(gen_loss_epoch) / len(gen_loss_epoch), 
+            sum(real_score_epoch) / len(real_score_epoch), sum(fake_score_epoch) / len(fake_score_epoch))
 
 def main():
     # 数据转换形式
@@ -70,7 +89,6 @@ def main():
         pin_memory=config.PIN_MEMORY,
         shuffle=True
     )
-    mean_loss = []
     # Model
     generator = Generator(z_dim=config.Z_DIM, img_dim=config.IMG_DIM).to(config.DEVICE)
     discriminator = Discriminator(img_dim=config.IMG_DIM).to(config.DEVICE)
@@ -83,9 +101,11 @@ def main():
     # 日志和参数保存
     log_dir = build_log_folder()
 
+    writer = SummaryWriter(log_dir)
+
     for epoch in range(config.NUM_EPOCHS):
 
-        dis_loss, gen_loss = train(train_loader, generator, discriminator, gen_optimizer, dis_optimizer, criterion)
+        dis_loss, gen_loss, real_score, fake_score = train(train_loader, generator, discriminator, gen_optimizer, dis_optimizer, criterion, epoch, writer)
 
         # 保存模型参数
         if epoch % 50 == 0:
@@ -97,7 +117,11 @@ def main():
             }
             save_checkpoints(checkpoints, log_dir, epoch)
 
-        # 记录损失
+        writer.add_scalar(tag='generator loss', scalar_value=gen_loss, global_step=epoch)
+        writer.add_scalar(tag='discriminator loss', scalar_value=dis_loss, global_step=epoch)
+        writer.add_scalar(tag='real score', scalar_value=real_score, global_step=epoch)
+        writer.add_scalar(tag='fake score', scalar_value=fake_score, global_step=epoch)
+
 
 
 if __name__ == '__main__':
