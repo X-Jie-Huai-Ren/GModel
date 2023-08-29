@@ -117,10 +117,10 @@ def main():
             }
             save_checkpoints(checkpoints, log_dir, epoch)
 
-        writer.add_scalar(tag='generator loss', scalar_value=gen_loss, global_step=epoch)
-        writer.add_scalar(tag='discriminator loss', scalar_value=dis_loss, global_step=epoch)
-        writer.add_scalar(tag='real score', scalar_value=real_score, global_step=epoch)
-        writer.add_scalar(tag='fake score', scalar_value=fake_score, global_step=epoch)
+        writer.add_scalar(tag='ModelLoss/generator loss', scalar_value=gen_loss, global_step=epoch)
+        writer.add_scalar(tag='ModelLoss/discriminator loss', scalar_value=dis_loss, global_step=epoch)
+        writer.add_scalar(tag='Score/real score', scalar_value=real_score, global_step=epoch)
+        writer.add_scalar(tag='Score/fake score', scalar_value=fake_score, global_step=epoch)
 
 
 
