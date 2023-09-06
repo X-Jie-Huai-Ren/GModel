@@ -11,6 +11,7 @@ from dataset import MNISTDataset
 import config
 from utils import Compose, save_checkpoints, build_log_folder
 from model import Generator, Discriminator
+from surgery import Surgery
 
 # 单周期训练
 def train(train_loader, generator, discriminator, gen_opt, dis_opt, criterion, epoch, writer):
@@ -62,16 +63,17 @@ def train(train_loader, generator, discriminator, gen_opt, dis_opt, criterion, e
         gen_loss_epoch.append(round(float(gen_loss.detach().cpu().numpy()), 3))
 
     # 将生成的图片展示出来
-    fake_fixed = generator(config.Z_FIXED).reshape((-1, 1, 28, 28))
-    real = real.reshape((-1, 1, 28, 28))
-    img_grid_fake = make_grid(fake_fixed, normalize=True)
-    img_grid_real = make_grid(real, normalize=True)
-    writer.add_image(
-        "Mnist Fake Image", img_grid_fake, global_step = epoch
-    )
-    writer.add_image(
-        "Mnist Real Image", img_grid_real, global_step = epoch
-    )
+    with torch.no_grad():
+        fake_fixed = generator(config.Z_FIXED).reshape((-1, 1, 28, 28))
+        real = real.reshape((-1, 1, 28, 28))
+        img_grid_fake = make_grid(fake_fixed, normalize=True)
+        img_grid_real = make_grid(real, normalize=True)
+        writer.add_image(
+            "Mnist Fake Image", img_grid_fake, global_step = epoch
+        )
+        writer.add_image(
+            "Mnist Real Image", img_grid_real, global_step = epoch
+        )
 
     return (sum(dis_loss_epoch) / len(dis_loss_epoch), sum(gen_loss_epoch) / len(gen_loss_epoch), 
             sum(real_score_epoch) / len(real_score_epoch), sum(fake_score_epoch) / len(fake_score_epoch))
@@ -127,4 +129,3 @@ def main():
 if __name__ == '__main__':
 
     main()
-    
