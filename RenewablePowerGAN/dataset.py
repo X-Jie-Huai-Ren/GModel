@@ -5,6 +5,8 @@ import numpy as np
 from torch.utils.data import Dataset
 import torch
 
+from utils import normalize, normalize1
+
 class SolarDataset(Dataset):
     """Solar Power Dataset"""
     def __init__(self, file_path, **kwargs) -> None:
@@ -38,3 +40,42 @@ class SolarDataset(Dataset):
 
         return data
 
+
+class ChangChuanDataset(Dataset):
+    """
+    the power dataset in ChangChun
+    """
+    def __init__(self, file_path, normed='norm', **kwargs) -> None:
+        """
+        :param file_path: thr path of data file
+        """
+        # Read data
+        data = pd.read_excel(file_path, **kwargs)["G"].values
+
+        # Format data: (8760, ) --> (-1, 24)
+        self.data = data.reshape((-1, 24))
+
+        # Normalize the data or not
+        if normed == 'norm':
+            self.data, self.max, self.min = normalize1(self.data)
+        elif normed == 'standard':
+            self.data, self.mean, self.std = normalize(self.data)
+
+    def __len__(self):
+        """
+        the number of samples
+        """
+        return len(self.data)
+    
+    def __getitem__(self, index):
+        """
+        :param index: the id of sample
+        """
+        data = torch.FloatTensor(self.data[index])
+
+        return data
+    
+
+
+    
+       

@@ -1,1 +1,6 @@
 /dataset
+CycleGAN/logs
+RenewablePowerGAN/logs
+*.jpg
+
+
