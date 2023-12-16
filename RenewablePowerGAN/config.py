@@ -22,3 +22,4 @@ WEIGHT_CLIP = 0.1      # WGAN for weight clipping
 CRITIC_ITERATIONS = 5  # training trick
 INIT_MODEL = False     # initialize the model or not
 LAMBDA_GP = 10         # according to the paper wgan-gp
+EMBEDDING_SIZE = 28    # for c-gan, labels embedding
