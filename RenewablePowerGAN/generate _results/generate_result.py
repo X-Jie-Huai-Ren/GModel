@@ -6,6 +6,9 @@ plot the generated data according to trained model
 * @date: 2023-11-11
 """
 
+import sys
+sys.path.append('D:\Python_WorkSpace\DL\GANS\RenewablePowerGAN')
+
 import torch
 import matplotlib.pyplot as plt
 import random

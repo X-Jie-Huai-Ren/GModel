@@ -74,14 +74,17 @@ def normalize1(data):
     
 
 # gradient penalty
-def gradient_penalty(critic, real, fake, device="cpu"):
+def gradient_penalty(critic, real, fake, device="cpu", labels=None):
     batch, data_len = real.shape
     # randomly generate the epsilon
     epsilon = torch.rand((batch, 1)).repeat(1, data_len).to(device)
     interpolated_data = real*epsilon + fake*(1-epsilon)
 
     # calculate critic scores
-    mixed_scores = critic(interpolated_data)
+    if labels is not None:
+        mixed_scores = critic(interpolated_data, labels)
+    else:
+        mixed_scores = critic(interpolated_data)
 
     gradient = torch.autograd.grad(
         inputs=interpolated_data,

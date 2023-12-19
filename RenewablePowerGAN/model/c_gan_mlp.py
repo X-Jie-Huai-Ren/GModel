@@ -36,13 +36,13 @@ class Generator(nn.Module):
 
         # build the model
         self.model = nn.Sequential(
-            nn.Linear(self.input_dim + self.embedding_size, 256),
+            nn.Linear(self.input_dim + self.embedding_size, 512),
+            nn.BatchNorm1d(512),
+            nn.ReLU(),
+            nn.Linear(512, 256),
             nn.BatchNorm1d(256),
             nn.ReLU(),
-            nn.Linear(256, 128),
-            nn.BatchNorm1d(128),
-            nn.ReLU(),
-            nn.Linear(128, 64),
+            nn.Linear(256, 64),
             nn.BatchNorm1d(64),
             nn.ReLU(),
             nn.Linear(64, self.output_dim)
@@ -86,11 +86,13 @@ class Discriminator(nn.Module):
 
         # build the model
         self.model = nn.Sequential(
-            nn.Linear(self.input_dim + self.embedding_size, 256),
+            nn.Linear(self.input_dim + self.embedding_size, 512),
+            nn.LeakyReLU(0.2),
+            nn.Linear(512, 256),
             nn.LeakyReLU(0.2),
             nn.Linear(256, 64),
             nn.LeakyReLU(0.2),
-            nn.Linear(64, 1),
+            nn.Linear(64, 1)
         )
 
         # Embedding layer
