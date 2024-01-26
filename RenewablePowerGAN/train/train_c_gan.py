@@ -33,6 +33,7 @@ def train(gen, disc, opt_gen, opt_disc, train_loader, epoch, interval):
     for real, labels in loop:
         real = real.to(config.DEVICE)
         labels = labels.to(config.DEVICE)
+        print(labels)
         # batch_size, when calculate the gradient penalty, The dimensions of the fake data must be the same as the dimensions of the real data
         batch_size = real.shape[0]
 

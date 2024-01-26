@@ -1,41 +1,40 @@
 """
-plot the generated data according to trained model
+plot the results of generated data by C-GAN model
 
-* @auther: xuan
+* @author: xuan
 * @email: 1920425406@qq.com
-* @date: 2023-11-11
+* @date: 2023-12-22
 """
 
 import sys
 sys.path.append('D:\Python_WorkSpace\DL\GANS\RenewablePowerGAN')
 
 import torch
-import matplotlib.pyplot as plt
 import random
 import importlib
-import numpy as np
 import os
 from datetime import datetime, timedelta
-
-# from model.mlp import Generator
-# from model.mlp_wgan import Generator
-from dataset import ChangChuanDataset
+from torch.utils.data import DataLoader
+import matplotlib.pyplot as plt
 import config
-from utils import save_data
+from datasets.c_gan_dataset import SeasonDataset
 
 
-def build_folder(arg_dict):
-    """build the folder to save the results"""
+def label_to_idx(class_: str):
+    """
+    Convert label to index
 
-    cur_time = datetime.now() + timedelta(hours=0)  # hours参数是时区
-    # join the path
-    result_dir = os.path.join(arg_dict["root_dir"], arg_dict["model"])
-    result_dir = os.path.join(result_dir, cur_time.strftime(f"[%m-%d]%H.%M.%S"))
+    Params:
+        class_: the category to be generated
+    """
+    label_to_idx_dict = {
+        'spring': 0,
+        'summer': 1,
+        "autumn": 2,
+        'winter': 3
+    }
 
-    if not os.path.exists(result_dir):
-        os.makedirs(result_dir)
-
-    return result_dir
+    return label_to_idx_dict[class_]
 
 
 def lineArg():
@@ -52,7 +51,18 @@ def lineArg():
     # line_arg['linewidth'] = random.randint(1, 4)
     return line_arg
 
+def build_folder(arg_dict):
+    """build the folder to save the results"""
 
+    cur_time = datetime.now() + timedelta(hours=0)  # hours参数是时区
+    # join the path
+    result_dir = os.path.join(arg_dict["root_dir"], arg_dict["model"])
+    result_dir = os.path.join(result_dir, cur_time.strftime(f"[%m-%d]%H.%M.%S"))
+
+    if not os.path.exists(result_dir):
+        os.makedirs(result_dir)
+
+    return result_dir
 
 def plot(real_data, fake_data, arg_dict):
     """
@@ -87,6 +97,10 @@ def plot(real_data, fake_data, arg_dict):
     plt.title('fake')
     plt.xlabel('time')
     plt.ylabel('power')
+    
+    # show the plot or not
+    if arg_dict["show"]:
+        plt.show()
 
     # save the result or not
     if arg_dict["savefig"]:
@@ -94,15 +108,8 @@ def plot(real_data, fake_data, arg_dict):
         result_dir = build_folder(arg_dict)
         plt.savefig(f'{result_dir}/result.png')
 
-    # show the plot or not
-    if arg_dict["show"]:
-        plt.show()
 
-    return result_dir
-
-
-
-def main(arg_dict):
+def main(arg_dict): 
 
     # load the trained model 
     impoted_model = importlib.import_module("model." + arg_dict["model"])
@@ -110,19 +117,29 @@ def main(arg_dict):
     checkpoints = torch.load(arg_dict["checkpoints_path"])
     generator.load_state_dict(checkpoints["generator"])
 
-    # Randomly generate the noise(input data)
-    input_z = torch.randn(size=(arg_dict["number"], config.Z_DIM))
+    # load the real data
+    solardataset = SeasonDataset(arg_dict["data"], normed=arg_dict["norm"])
+    dataloader = DataLoader(
+        dataset=solardataset,
+        batch_size=365,
+        shuffle=True
+    )
 
-    # For Test
+    # label to index
+    index = label_to_idx(arg_dict["class"])
+
+    # real data
+    for x, y in dataloader:
+        indices = y==index
+        real_data = x[indices]
+
+    ## fake data
+    # Randomly generte the noise and labels
     generator.eval()
-
-    # Generate the fake data
-    fake_data = generator(input_z).detach().numpy()
-
-    # load the real data 
-    solardataset = ChangChuanDataset(arg_dict["data_file"], normed=arg_dict["norm"])
-    real_data = solardataset[np.random.randint(0, len(solardataset), size=arg_dict["number"])]
-
+    z = torch.randn(size=(len(real_data), config.Z_DIM))
+    labels = torch.IntTensor([index] * len(real_data))
+    fake_data = generator(z, labels).detach().cpu().numpy()
+    
     # for normalize, if normed, the data should be midified
     if arg_dict["norm"] == 'norm':
         fake_data = fake_data * (solardataset.max - solardataset.min) + solardataset.min
@@ -130,29 +147,23 @@ def main(arg_dict):
     elif arg_dict["norm"] == 'standard':
         fake_data = fake_data * solardataset.std + solardataset.mean
         real_data = real_data * solardataset.std + solardataset.mean
+
+    plot(real_data, fake_data, arg_dict)
     
-    # plot
-    result_dir = plot(real_data, fake_data, arg_dict)
-
-    # save the generated data to excel
-    if arg_dict["save"]:
-        save_data(file_path=f'{result_dir}/real.xlsx', data=real_data)
-        save_data(file_path=f'{result_dir}/fake.xlsx', data=fake_data)
-
-
 
 if __name__ == '__main__':
 
     arg_dict = {
-        "number": 64,    # 32, 64, 128 ...  the number of generated data
-        "model": 'mlp_wgan_bt',   # mlp, mlp_wgan, mlp_wgan_bt, c_gan_mlp
-        "checkpoints_path": './logs/WGAN-GP/bt_standard_nodisc/model_9999.tar',
-        "data_file": './data/changchun.xlsx',
+        "data": './data/changchun.xlsx',
+        "model": 'c_gan_mlp',  # mlp, mlp_wgan, mlp_wgan_bt, c_gan_mlp
+        "checkpoints_path": './logs/CGAN/[12-19]21.46.25/model_9999.tar',
+        "savefig": False,
+        "root_dir": './results/cgan',
+        "norm": 'standard',  # norm or standard
+        "class": 'autumn',
+        "root_dir": './results/cgan',
         "show": True,
-        "savefig": True,
-        "save": True,    # save data to excel or not
-        "root_dir": './results',   # if "save" is True, the results will be saved to this dir
-        "norm": 'standard'   # norm or standard
+        "root_dir": './results/cgan',   # if "save" is True, the results will be saved to this dir
     }
 
     main(arg_dict)
