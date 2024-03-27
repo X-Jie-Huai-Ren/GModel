@@ -6,7 +6,7 @@ the main script for diffusion model
 * @date: 2024-03-21
 """
 
-
+import os
 import torch
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
@@ -31,7 +31,7 @@ class Trainer:
         self.optimizer = optimizer
         self.train_loader = train_loader
         # loss func
-        self.loss_func = nn.CrossEntropyLoss()
+        self.loss_func = nn.L1Loss()
         # device
         self.device = self.arg_dict['device']
         # tensorboard writer
@@ -63,13 +63,39 @@ class Trainer:
 
     
     def train(self):
+
+        loss_max = 1000
+
         for epoch in range(self.arg_dict['num_epochs']):
+
             # train for epoch
             loss = self._train_for_epoch(epoch)
 
+            # save the model
+            if loss < loss_max:
+                loss_max = loss
+                self._save_model(epoch, min=True)
+            if epoch > 200 and (epoch+1) % 100 == 0:
+                self._save_model(epoch)
+
             # 记录日志
             self.writer.add_scalar(tag='loss', scalar_value=loss, global_step=epoch)
-            
+
+
+
+    def _save_model(self, epoch, min=False):
+        """
+        """
+        if not os.path.exists(self.arg_dict['log_dir']):
+            os.makedirs(self.arg_dict['log_dir'])
+        checkpoints = self.backwardModel.state_dict()
+        if min:
+            path = self.arg_dict['log_dir'] + '/minloss.tar'
+        else:
+            path = self.arg_dict['log_dir'] + f'/model_{epoch}.tar'
+        print(f'==> Saving checkpoints: {epoch}')
+        torch.save(checkpoints, path)
+
 
 
 def main(arg_dict):
@@ -118,8 +144,6 @@ def main(arg_dict):
     trainer.train()
 
     
-
-
 
 if __name__ == '__main__':
 
