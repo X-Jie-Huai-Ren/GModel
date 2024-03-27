@@ -7,7 +7,7 @@ plot the results of generated data by C-GAN model
 """
 
 import sys
-sys.path.append('D:\Python_WorkSpace\DL\GANS\RenewablePowerGAN')
+sys.path.append('C:\LemonLover\WorkSpace\DL\GANS\RenewablePowerGAN')
 
 import torch
 import random

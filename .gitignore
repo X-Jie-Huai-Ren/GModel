@@ -1,3 +1,5 @@
+DiffusionModel/data
+DiffusionModel/logs
 /dataset
 CycleGAN/logs
 RenewablePowerGAN/logs
