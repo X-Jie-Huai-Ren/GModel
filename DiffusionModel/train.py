@@ -127,7 +127,7 @@ def main(arg_dict):
     # device
     device = arg_dict['device']
     # create log dir
-    arg_dict['log_dir'] = bulid_log_dir()
+    arg_dict['log_dir'] = bulid_log_dir(dir='./logs')
 
     # create the ForwardProcess Model
     fp = ForwardProcess(arg_dict['T']).to(device)
@@ -154,7 +154,7 @@ if __name__ == '__main__':
         "batch_size": 32,
         "T": 300,  # timesteps
         "lr": 2e-5,
-        "num_epochs": 1000
+        "num_epochs": 5000
     }
 
     main(arg_dict)

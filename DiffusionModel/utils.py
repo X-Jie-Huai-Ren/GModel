@@ -46,9 +46,9 @@ def rebuild_imgs(imgs):
     """
     return imgs * 0.5 + 0.5
 
-def bulid_log_dir():
+def bulid_log_dir(dir):
     curtime = datetime.now() + timedelta(hours=0)  # hours参数是时区
-    log_path_dir = os.path.join('./logs', curtime.strftime(f"[%m-%d]%H.%M.%S"))
+    log_path_dir = os.path.join(dir, curtime.strftime(f"[%m-%d]%H.%M.%S"))
     # 若文件夹不存在，则创建
     if not os.path.exists(log_path_dir):
         os.makedirs(log_path_dir)
@@ -59,7 +59,7 @@ def bulid_log_dir():
 def transform():
     return A.Compose(
         [
-            A.Resize(width=256, height=256),
+            A.Resize(width=128, height=128),
             A.HorizontalFlip(p=0.5),
             A.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5], max_pixel_value=255),
             ToTensorV2()

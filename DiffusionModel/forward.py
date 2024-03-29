@@ -44,7 +44,7 @@ class ForwardProcess(nn.Module):
         self.sqrt_alphas_cumprod = torch.sqrt(self.alphas_cumprod)
         # 根号下(1-累乘alphas)
         self.sqrt_one_minus_alphas_cumprod = torch.sqrt(1. - self.alphas_cumprod)
-        # 新正态分布下的方差是一个定值，是直接由前向过程中的beta和alpha确定的
+        # p[x(t-1)|x(t)]下的方差是一个定值，是直接由前向过程中的beta和alpha确定的
         self.posterior_variance = self.betas * (1. - self.alphas_cumprod_prev) / (1. - self.alphas_cumprod)
 
 
