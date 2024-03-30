@@ -33,7 +33,7 @@ class Generator:
         self.posterior_variance = fp.posterior_variance
 
         # stepsize
-        self.stepsize = 10
+        self.stepsize = 30
 
 
     @ torch.no_grad()
@@ -81,7 +81,7 @@ class Generator:
         return buffer
     
 
-def plot(imgs, cols=6):
+def plot(imgs, cols=5):
     """
     Params:
         imgs: (steps, num, 3, 128, 128)
@@ -133,7 +133,7 @@ def main(arg_dict):
 if __name__ == '__main__': 
 
     arg_dict = {
-        "checkpoints": './logs/[03-29]14.07.06/model_4999.tar',
+        "checkpoints": './logs/[03-29]20.28.08/minloss.tar', 
         "num": 2,  # the number of images you want to generate
         "T": 300
     }
